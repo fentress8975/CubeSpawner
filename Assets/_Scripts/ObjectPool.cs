@@ -10,21 +10,18 @@ public class ObjectPool<T> where T : MonoBehaviour
     private const int POOL_MAX_REMOVE_COUNT = 40; //Try to not make lag spikes if there about 1000 objects to delete
     private CoroutinesHolder m_CoroutineHolder;
 
-    private T m_Prefab;
-    private Transform m_Parent;
+    private readonly T m_Prefab;
+    private readonly Transform m_Parent;
     private List<T> m_Pool;
-
-    private int m_Count;
 
     public int CurrentPoolSize { get { return m_Pool.Count; } }
     public ObjectPool(T prefab, int count)
     {
         m_Prefab = prefab;
-        m_Count = count;
         CreateCoroutinesHolder();
         m_Parent = m_CoroutineHolder.transform;
 
-        CreatePool();
+        CreatePool(count);
     }
 
     public void ReturnToPool(T target)
@@ -44,15 +41,13 @@ public class ObjectPool<T> where T : MonoBehaviour
             }
         }
         Debug.LogError("Oh no, no more objects in pool, RESIZE!");
-        ChangePoolSize(m_Count + POOL_SIZE_STEP);
+        ChangePoolSize(m_Pool.Count + POOL_SIZE_STEP);
         return GetObjectFromPool();
     }
 
-    public void ChangePoolSize(int poolSize)
+    public void ChangePoolSize(int count)
     {
-        var oldCount = m_Count;
-        m_Count = poolSize;
-        ResizePool(oldCount);
+        ResizePool(count);
     }
 
     private void CreateCoroutinesHolder()
@@ -61,11 +56,11 @@ public class ObjectPool<T> where T : MonoBehaviour
         m_CoroutineHolder = go.AddComponent<CoroutinesHolder>();
     }
 
-    private void CreatePool()
+    private void CreatePool(int count)
     {
         m_Pool = new List<T>();
 
-        for (int i = 0; i < m_Count; i++)
+        for (int i = 0; i < count; i++)
         {
             m_Pool.Add(CreateObject());
         }
@@ -127,20 +122,20 @@ public class ObjectPool<T> where T : MonoBehaviour
         return target.gameObject.activeInHierarchy == false ? true : false;
     }
 
-    private void ResizePool(int oldCount)
+    private void ResizePool(int count)
     {
-        if (oldCount == m_Count) return;
+        if (count == m_Pool.Count) return;
         m_CoroutineHolder.StopAllCoroutines();
-        if (oldCount < m_Count)
+        if (count > m_Pool.Count)
         {
-            for (int i = 0; i < m_Count - oldCount; i++)
+            for (int i = 0; i < count - m_Pool.Count; i++)
             {
                 m_Pool.Add(CreateObject());
             }
         }
         else
         {
-            m_CoroutineHolder.StartCoroutine(RemoveObjects(oldCount - m_Count));
+            m_CoroutineHolder.StartCoroutine(RemoveObjects(m_Pool.Count - count));
         }
     }
 }

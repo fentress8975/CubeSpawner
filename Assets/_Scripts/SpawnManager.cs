@@ -113,7 +113,6 @@ public class SpawnManager : SingletonMono<SpawnManager>
     {
         while (true)
         {
-            Debug.Log($"Current Pool Size = {m_Pool.CurrentPoolSize}");
             UIManager.Instance.ChangePoolSizeText(m_Pool.CurrentPoolSize);
             yield return new WaitForSeconds(2);
         }
